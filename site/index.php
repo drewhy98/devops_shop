@@ -238,7 +238,7 @@ session_start();
 
   <!-- MAIN FEATURED -->
   <section class="featured">
-    <h2>Featured This December</h2>
+    <h2>Featured This December: A lovely Christmas</h2>
     <img src="https://learn.surlatable.com/wp-content/uploads/2022/12/Tips-for-planning-your-Christmas-dinner.jpg" alt="Christmas Dinner">
   </section>
 
@@ -341,4 +341,5 @@ session_start();
 
 </body>
 </html>
+
 
