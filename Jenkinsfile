@@ -2,58 +2,49 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB = credentials('DockerHub') // Make sure this matches your Jenkins credentials ID
-        IMAGE_NAME = "st20276784/devops_shop"
+        DOCKERHUB = credentials('DockerHub')  // Jenkins credential ID
+        IMAGE_NAME = "drewhy98/devops_shop_web"
+        IMAGE_TAG  = "1.0"
     }
 
     stages {
         stage('Docker Login') {
             steps {
+                echo 'Logging in to Docker Hub...'
                 sh 'echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
-                sh "docker build -t $IMAGE_NAME ."
-            }
-        }
-
-        stage('Run Containers') {
-            steps {
-                echo 'Stopping any previous containers...'
-                sh '''
-                    docker stop devops_shop || true
-                    docker rm devops_shop || true
-                    docker compose up -d
-                '''
-                echo 'Waiting for services to initialize...'
-                sh 'sleep 15'
-            }
-        }
-
-        stage('Test (Optional)') {
-            steps {
-                echo 'Skipping health check from Jenkins container...'
-                // If you want to test, you can do it inside the container:
-                // sh 'docker exec devops_shop curl -f http://localhost:8080 || exit 1'
+                echo "Building Docker image $IMAGE_NAME:$IMAGE_TAG ..."
+                sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                echo 'Pushing image to Docker Hub...'
-                sh "docker push $IMAGE_NAME"
+                echo "Pushing Docker image $IMAGE_NAME:$IMAGE_TAG to Docker Hub..."
+                sh "docker push $IMAGE_NAME:$IMAGE_TAG"
             }
         }
 
-        stage('Clean Up') {
+        stage('Run Containers') {
             steps {
-                echo 'Cleaning up containers and images...'
+                echo 'Stopping previous containers and starting new ones...'
                 sh '''
                     docker compose down || true
-                    docker rmi $IMAGE_NAME || true
+                    docker compose pull
+                    docker compose up -d
+                '''
+            }
+        }
+
+        stage('Clean Up (Optional)') {
+            steps {
+                echo 'Cleaning up unused images...'
+                sh '''
+                    docker image prune -f
                 '''
             }
         }
