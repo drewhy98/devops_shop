@@ -1,12 +1,8 @@
-version: '3.9'
-
 services:
   web:
-    image: drewhy98/devops_shop_web:1.0   # <-- YOUR IMAGE
+    image: drewhy98/devops_shop_web:1.0
     ports:
       - "8081:80"
-    volumes:
-      - ./site:/var/www/html
     environment:
       DB_SERVER: db
       DB_USER: root
