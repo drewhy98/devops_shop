@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB = credentials('DockerHub') // Make sure this matches your Jenkins credentials ID
-        IMAGE_NAME = "st20276784/devops_shop:latest"
+        IMAGE_NAME = "st20276784/devops_shop"
     }
 
     stages {
