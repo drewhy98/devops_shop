@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'bassam2080/myapp4-web'
+    IMAGE_NAME = 'st20276784/devops_shop'
     DOCKERHUB = credentials('DockerHub')
   }
 
@@ -27,10 +27,10 @@ pipeline {
   steps {
     sh '''
       # Clean up old container if it exists
-      docker rm -f myapp4-smoke || true
+      docker rm -f devops_shop-smoke || true
 
       # Run container for smoke test (no ports exposed)
-      docker run -d --name myapp4-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
+      docker run -d --name devops_shop-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
 
       # Give the app a moment to start
       sleep 15
@@ -38,7 +38,7 @@ pipeline {
       # Run curl from a *second* container that shares the same network namespace
       set +e
       docker run --rm \
-        --network container:myapp4-smoke \
+        --network container:devops_shop-smoke \
         curlimages/curl:8.9.0 \
         -f http://localhost/ > /dev/null 2>&1
       STATUS=$?
@@ -46,13 +46,13 @@ pipeline {
 
       if [ "$STATUS" -ne 0 ]; then
         echo "Smoke test FAILED, container logs:"
-        docker logs myapp4-smoke || true
-        docker rm -f myapp4-smoke || true
+        docker logs devops_shop-smoke || true
+        docker rm -f devops_shop-smoke || true
         exit 1
       fi
 
       echo "Smoke test PASSED"
-      docker rm -f myapp4-smoke || true
+      docker rm -f devops_shop-smoke || true
     '''
   }
 }
