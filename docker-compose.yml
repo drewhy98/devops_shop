@@ -1,6 +1,6 @@
 services:
   web:
-    image: drewhy98/devops_shop_web:1.0
+    image: st20276784/devops_shop_web:1.0
     ports:
       - "8081:80"
     environment:
