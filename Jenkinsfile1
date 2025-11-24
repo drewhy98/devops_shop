@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'st20276784/devops_shop'
+    IMAGE_NAME = 'st20276784/devops_shop_web'
     DOCKERHUB = credentials('DockerHub')
   }
 
