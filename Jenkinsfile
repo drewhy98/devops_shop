@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB = credentials('DockerHub')  // Jenkins credential ID
-        IMAGE_NAME = "drewhy98/devops_shop_web"
+        IMAGE_NAME = "st20276784/devops_shop_web"
         IMAGE_TAG  = "1.0"
     }
 
