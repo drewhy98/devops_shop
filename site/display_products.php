@@ -53,9 +53,6 @@ require_once "dbconnect.php";   // provides $mysqli
 
 <nav>
     <a href="index.php">Home</a>
-    <a href="display_meat.php">Meat</a>
-    <a href="display_veg.php">Vegetables</a>
-    <a href="display_bakery.php">Bakery</a>
     <a href="display_products.php">View All Products</a>
 </nav>
 
