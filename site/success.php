@@ -105,7 +105,7 @@
   <div class="success-message">
     <div class="success-icon">✅</div>
     <h2>Registration Successful!</h2>
-    <p>Your account has been created successfully. Welcome to <strong>ShopSphere</strong> — where freshness meets convenience!</p>
+    <p>Your account has been created successfully. Welcome to <strong>ShopSphere</strong></p>
 
     <div style="margin-top: 30px;">
       <a href="index.php" class="btn">Go Back to Home</a>
@@ -115,3 +115,4 @@
 
 </body>
 </html>
+
