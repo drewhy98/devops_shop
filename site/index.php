@@ -226,9 +226,9 @@ session_start();
             <span>Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
             <form method="post" action="logout.php" style="display:inline;">
                 <button type="submit" class="logout-btn">Logout</button>
-                <a href="wishlist.php">View Wishlist</a> |
-                <a href="basket.php">View Basket</a> |
-                <a href="view_orders.php">View Orders</a> |
+              <!--   <a href="wishlist.php">View Wishlist</a> |-->
+               <!--  <a href="basket.php">View Basket</a> |-->
+               <!--  <a href="view_orders.php">View Orders</a> |-->
             </form>
         <?php else: ?>
             <a href="login.php">Customer Log In</a> |
@@ -264,6 +264,7 @@ session_start();
 
 </body>
 </html>
+
 
 
 
