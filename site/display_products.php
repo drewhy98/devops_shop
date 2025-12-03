@@ -34,9 +34,9 @@ require_once "dbconnect.php";   // provides $mysqli
 
 <header>
     <h1>ShopSphere</h1>
-    <form class="search-bar" method="get">
-        <input type="text" name="search" placeholder="Search Stock...">
-        <button type="submit">Search</button>
+  <!--   <form class="search-bar" method="get">-->
+    <!--     <input type="text" name="search" placeholder="Search Stock...">-->
+       <!--  <button type="submit">Search</button>-->
     </form>
     <div class="auth-links">
         <?php if(isset($_SESSION['user_name'])): ?>
