@@ -109,10 +109,11 @@
 
     <div style="margin-top: 30px;">
       <a href="index.php" class="btn">Go Back to Home</a>
-      <a href="register.php" class="btn btn-secondary">Register Another User</a>
+      <a href="login.php" class="btn btn-secondary">Log In</a>
     </div>
   </div>
 
 </body>
 </html>
+
 
