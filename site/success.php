@@ -103,7 +103,6 @@
   </div>
 
   <div class="success-message">
-    <div class="success-icon">✅</div>
     <h2>Registration Successful!</h2>
     <p>Your account has been created successfully. Welcome to <strong>ShopSphere</strong></p>
 
@@ -115,5 +114,6 @@
 
 </body>
 </html>
+
 
 
