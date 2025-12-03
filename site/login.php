@@ -153,7 +153,7 @@
 
     <div class="links">
       <p>Don’t have an account? <a href="register.php">Register here</a></p>
-      <p>Are you an Admin? <a href="admin_login.php">Log in here</a></p>
+     <-- <p>Are you an Admin? <a href="admin_login.php">Log in here</a></p> -->
       <p><a href="index.php">Back to Home</a></p>
     </div>
   </div>
