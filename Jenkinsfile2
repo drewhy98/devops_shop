@@ -71,7 +71,7 @@ pipeline {
 
     stage('Deploy to EC2') {
       steps {
-        sshagent (credentials: ['YOUR_EC2_SSH_CREDENTIALS_ID']) {
+        sshagent (credentials: [EC2_SSH_CREDENTIALS]) {
           sh '''
             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
               sudo apt update -y
@@ -92,7 +92,7 @@ pipeline {
 
               sudo docker run -d \
                 --name devops_app \
-                -p 5000:80 \
+                -p 8081:80 \
                 st20276784/devops_shop_web:latest
             EOF
           '''
