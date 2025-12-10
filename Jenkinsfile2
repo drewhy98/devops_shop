@@ -1,115 +1,125 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    IMAGE_NAME = 'st20276784/devops_shop_web'
-    DOCKERHUB = credentials('DockerHub')
+    environment {
+        IMAGE_NAME = 'st20276784/devops_shop_web'
+        DOCKERHUB = credentials('DockerHub')
 
-    EC2_HOST = '13.61.187.235'
-    EC2_USER = 'ec2-user'
-  }
-
-  stages {
- stage('Docker Login') {
-      steps {
-        sh 'echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin'
-      }
-    }
-        stage('Build image') {
-      steps {
-        sh '''
-          docker build \
-            -t ${IMAGE_NAME}:${BUILD_NUMBER} \
-            -t ${IMAGE_NAME}:latest \
-            .
-        '''
-      }
+        EC2_HOST = '13.61.187.235'
+        EC2_USER = 'ec2-user'
     }
 
-  stage('Smoke test') {
-  steps {
-    sh '''
-      # Clean up old container if it exists
-      docker rm -f devops_shop-smoke || true
+    stages {
 
-      # Run container for smoke test (no ports exposed)
-      docker run -d --name devops_shop-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
-
-      # Give the app a moment to start
-      sleep 15
-
-      # Run curl from a *second* container that shares the same network namespace
-      set +e
-      docker run --rm \
-        --network container:devops_shop-smoke \
-        curlimages/curl:8.9.0 \
-        -f http://localhost/ > /dev/null 2>&1
-      STATUS=$?
-      set -e
-
-      if [ "$STATUS" -ne 0 ]; then
-        echo "Smoke test FAILED, container logs:"
-        docker logs devops_shop-smoke || true
-        docker rm -f devops_shop-smoke || true
-        exit 1
-      fi
-
-      echo "Smoke test PASSED"
-      docker rm -f devops_shop-smoke || true
-    '''
-  }
-}   
-
-    stage('Push image') {
-      steps {
-        sh '''
-          
-          docker push ${IMAGE_NAME}:latest
-        '''
-      }
-    }
-
-    stage('Deploy to EC2') {
-      steps {
-        sshagent (credentials: ['EC2_SSH_CREDENTIALS']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
-              sudo apt update -y
-
-              # Install Docker if missing
-              if ! command -v docker &> /dev/null
-              then
-                sudo apt install -y docker.io
-                sudo systemctl start docker
-                sudo systemctl enable docker
-              fi
-
-              # Pull & run latest container
-              sudo docker pull st20276784/devops_shop_web:latest
-
-              sudo docker stop devops_app || true
-              sudo docker rm devops_app || true
-
-              sudo docker run -d \
-                --name devops_app \
-                -p 8081:80 \
-                st20276784/devops_shop_web:latest
-            EOF
-          '''
+        stage('Docker Login') {
+            steps {
+                sh '''
+                    echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
+                '''
+            }
         }
-      }
+
+        stage('Build image') {
+            steps {
+                sh '''
+                    docker build \
+                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                '''
+            }
+        }
+
+        stage('Smoke test') {
+            steps {
+                sh '''
+                    # Remove old smoke-test container
+                    docker rm -f devops_shop-smoke || true
+
+                    docker run -d --name devops_shop-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
+                    sleep 15
+
+                    set +e
+                    docker run --rm \
+                        --network container:devops_shop-smoke \
+                        curlimages/curl:8.9.0 \
+                        -f http://localhost/ > /dev/null 2>&1
+                    STATUS=$?
+                    set -e
+
+                    if [ "$STATUS" -ne 0 ]; then
+                        echo "Smoke test FAILED"
+                        docker logs devops_shop-smoke || true
+                        docker rm -f devops_shop-smoke || true
+                        exit 1
+                    fi
+
+                    echo "Smoke test PASSED"
+                    docker rm -f devops_shop-smoke || true
+                '''
+            }
+        }
+
+        stage('Push image') {
+            steps {
+                sh '''
+                    docker push ${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+
+                sshagent (credentials: ['EC2_SSH_CREDENTIALS']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+
+# ================================
+# FIXED: Amazon Linux uses YUM not APT
+# ================================
+sudo yum update -y     # <-- CHANGED from apt update
+
+# ================================
+# FIXED: Install Docker the Amazon Linux way
+# ================================
+if ! command -v docker &> /dev/null
+then
+    if command -v amazon-linux-extras &> /dev/null; then
+        sudo amazon-linux-extras install docker -y    # <-- CHANGED from apt install
+    else
+        sudo yum install -y docker
+    fi
+    sudo systemctl start docker
+    sudo systemctl enable docker
+fi
+
+# Pull & run your container
+sudo docker pull st20276784/devops_shop_web:latest
+sudo docker stop devops_app || true
+sudo docker rm devops_app || true
+
+sudo docker run -d \
+    --name devops_app \
+    -p 8081:80 \
+    st20276784/devops_shop_web:latest
+
+EOF
+                    '''
+                }
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                echo "Cleanup placeholder"
+            }
+        }
     }
 
-    stage('Clean') {
-      steps {
-        echo "Cleanup placeholder"
-      }
+    post {
+        always {
+            echo "Pipeline completed."
+        }
     }
-  }
-
-  post {
-    always {
-      echo "Pipeline completed."
-    }
-  }
 }
