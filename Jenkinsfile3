@@ -67,48 +67,41 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
+                
                 sshagent(credentials: ['EC2_SSH_CREDENTIALS']) {
+
+                    // ---- INSTALL DOCKER + COMPOSE & PREP FOLDER ----
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
-
-# Install Docker & Compose
 sudo yum update -y
 sudo yum install -y docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
-# Install docker-compose plugin if missing
-if ! command -v docker-compose &> /dev/null
-then
-    sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+if ! command -v docker-compose &> /dev/null; then
+    sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
+        -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
-# Create deploy folder
 mkdir -p ~/devops_shop
-cd ~/devops_shop
-
-# Copy docker-compose.yml from Jenkins workspace
 EOF
                     """
-                }
 
-                // Copy docker-compose.yml from Jenkins to EC2
-                sh """
-                    scp -o StrictHostKeyChecking=no docker-compose.yml ${EC2_USER}@${EC2_HOST}:~/devops_shop/docker-compose.yml
-                """
+                    // ---- COPY docker-compose.yml (NOW INSIDE SSHAGENT!) ----
+                    sh """
+                        scp -o StrictHostKeyChecking=no docker-compose.yml \
+                        ${EC2_USER}@${EC2_HOST}:~/devops_shop/docker-compose.yml
+                    """
 
-                // Pull latest image and compose up
-                sshagent(credentials: ['EC2_SSH_CREDENTIALS']) {
+                    // ---- RUN COMPOSE ----
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
-
 cd ~/devops_shop
 
-sudo docker compose down
+sudo docker compose down || true
 sudo docker compose pull
 sudo docker compose up -d
-
 EOF
                     """
                 }
