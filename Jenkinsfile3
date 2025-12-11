@@ -67,41 +67,52 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                
+
                 sshagent(credentials: ['EC2_SSH_CREDENTIALS']) {
 
-                    // ---- INSTALL DOCKER + COMPOSE & PREP FOLDER ----
+                    // --- INSTALL DOCKER + COMPOSE + SETUP FOLDER ---
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+
+# Install Docker
 sudo yum update -y
 sudo yum install -y docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
-if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
-        -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+# Install Docker Compose v2 correctly for Amazon Linux 2023
+if [ ! -f /usr/libexec/docker/cli-plugins/docker-compose ]; then
+    echo "Installing Docker Compose v2..."
+    sudo mkdir -p /usr/libexec/docker/cli-plugins/
+    sudo curl -SL \\
+        https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 \\
+        -o /usr/libexec/docker/cli-plugins/docker-compose
+    sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+else
+    echo "Docker Compose v2 already installed."
 fi
 
+# Create deployment folder
 mkdir -p ~/devops_shop
 EOF
                     """
 
-                    // ---- COPY docker-compose.yml (NOW INSIDE SSHAGENT!) ----
+                    // --- COPY DOCKER-COMPOSE.YML ---
                     sh """
                         scp -o StrictHostKeyChecking=no docker-compose.yml \
                         ${EC2_USER}@${EC2_HOST}:~/devops_shop/docker-compose.yml
                     """
 
-                    // ---- RUN COMPOSE ----
+                    // --- RUN DOCKER COMPOSE ---
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+
 cd ~/devops_shop
 
 sudo docker compose down || true
 sudo docker compose pull
 sudo docker compose up -d
+
 EOF
                     """
                 }
