@@ -98,7 +98,8 @@ EOF
                     // Copy compose & SQL file
                     sh """
                         scp -o StrictHostKeyChecking=no docker-compose.yml ${EC2_USER}@${EC2_HOST}:~/devops_shop/docker-compose.yml
-                        scp -o StrictHostKeyChecking=no init.sql ${EC2_USER}@${EC2_HOST}:~/devops_shop/init.sql
+                        scp -o StrictHostKeyChecking=no ./init.sql ${EC2_USER}@${EC2_HOST}:devops_shop/
+
                     """
 
                     // Bring containers up
