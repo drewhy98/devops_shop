@@ -123,7 +123,7 @@ EOF
 
 cd ~/devops_shop
 
-sudo docker compose down || true
+sudo docker compose down -v || true # TEMPORARY: reset DB volume so init.sql runs again
 sudo docker compose pull
 sudo docker compose up -d
 
