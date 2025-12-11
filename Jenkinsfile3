@@ -70,17 +70,17 @@ pipeline {
 
                 sshagent(credentials: ['EC2_SSH_CREDENTIALS']) {
 
-                    // --- INSTALL DOCKER + COMPOSE + SETUP FOLDER ---
+                    // --- INSTALL DOCKER + COMPOSE + CLEAN PORTS + SETUP FOLDER ---
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
 
-# Install Docker
+### INSTALL DOCKER ######################################
 sudo yum update -y
 sudo yum install -y docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
-# Install Docker Compose v2 correctly for Amazon Linux 2023
+### INSTALL DOCKER COMPOSE v2 ############################
 if [ ! -f /usr/libexec/docker/cli-plugins/docker-compose ]; then
     echo "Installing Docker Compose v2..."
     sudo mkdir -p /usr/libexec/docker/cli-plugins/
@@ -92,8 +92,22 @@ else
     echo "Docker Compose v2 already installed."
 fi
 
-# Create deployment folder
+### CLEAN ANY PROCESS USING PORT 8081 ####################
+echo "Cleaning any old processes or containers using port 8081..."
+
+# Kill raw processes
+sudo fuser -k 8081/tcp || true
+
+# Kill old containers exposing the port
+old_containers=\$(sudo docker ps -q --filter "publish=8081")
+if [ ! -z "\$old_containers" ]; then
+    echo "Removing old containers on port 8081..."
+    sudo docker rm -f \$old_containers
+fi
+
+### PREPARE DEPLOYMENT FOLDER ############################
 mkdir -p ~/devops_shop
+
 EOF
                     """
 
