@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = 'st20276784/devops_shop_combined'
         DOCKERHUB = credentials('DockerHub')
-
         EC2_HOST = '16.171.231.184'
         EC2_USER = 'ec2-user'
     }
@@ -19,8 +18,7 @@ pipeline {
             }
         }
 
- 
-        stage('Build image') {
+        stage('Build Image') {
             steps {
                 sh '''
                     docker build \
@@ -31,37 +29,32 @@ pipeline {
             }
         }
 
-        stage('Smoke test') {
+        stage('Smoke Test') {
             steps {
                 sh '''
-                    docker rm -f devops_shop-smoke || true
+                    docker rm -f devops_smoke || true
+                    docker run -d --name devops_smoke ${IMAGE_NAME}:${BUILD_NUMBER}
 
-                    docker run -d --name devops_shop-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
-                    sleep 15
+                    sleep 10
 
                     set +e
-                    docker run --rm \
-                        --network container:devops_shop-smoke \
-                        curlimages/curl:8.9.0 \
-                        -f http://localhost/ > /dev/null 2>&1
+                    docker run --rm --network container:devops_smoke curlimages/curl:8.9.0 -f http://localhost/ > /dev/null 2>&1
                     STATUS=$?
                     set -e
 
                     if [ "$STATUS" -ne 0 ]; then
-                        echo "Smoke test FAILED"
-                        docker logs devops_shop-smoke || true
-                        docker rm -f devops_shop-smoke || true
+                        echo "❌ Smoke test failed"
+                        docker logs devops_smoke || true
                         exit 1
                     fi
 
-                    echo "Smoke test PASSED"
-                    docker rm -f devops_shop-smoke || true
+                    echo "✅ Smoke test passed"
+                    docker rm -f devops_smoke
                 '''
             }
         }
-      
 
-        stage('Push image') {
+        stage('Push Image') {
             steps {
                 sh '''
                     docker push ${IMAGE_NAME}:latest
@@ -72,12 +65,12 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent (credentials: ['EC2_SSH_CREDENTIALS']) {
-                    sh '''
+                    sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
 
 sudo yum update -y
 
-# Install Docker if missing
+# Install Docker if needed
 if ! command -v docker &> /dev/null
 then
     if command -v amazon-linux-extras &> /dev/null; then
@@ -89,32 +82,26 @@ then
     sudo systemctl enable docker
 fi
 
-# Pull & run your combined image
-sudo docker pull st20276784/devops_shop_combined:latest
+# Deploy latest version of app
+sudo docker pull ${IMAGE_NAME}:latest
 sudo docker stop devops_app || true
 sudo docker rm devops_app || true
 
 sudo docker run -d \
-    --name devops_app \
-    -p 8081:80 \
-    st20276784/devops_shop_combined:latest
+  --name devops_app \
+  -p 8081:80 \
+  ${IMAGE_NAME}:latest
 
 EOF
-                    '''
+                    """
                 }
-            }
-        }
-
-        stage('Clean') {
-            steps {
-                echo "Cleanup placeholder"
             }
         }
     }
 
     post {
         always {
-            echo "Pipeline completed."
+            echo "Pipeline complete."
         }
     }
 }
