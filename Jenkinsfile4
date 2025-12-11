@@ -10,6 +10,7 @@ pipeline {
 
     stages {
 
+        /* ---------------------- DOCKER LOGIN ---------------------- */
         stage('Docker Login') {
             steps {
                 sh '''
@@ -18,6 +19,7 @@ pipeline {
             }
         }
 
+        /* ---------------------- BUILD IMAGE ---------------------- */
         stage('Build Image') {
             steps {
                 sh '''
@@ -29,6 +31,7 @@ pipeline {
             }
         }
 
+        /* ---------------------- SMOKE TEST ---------------------- */
         stage('Smoke Test') {
             steps {
                 sh '''
@@ -38,7 +41,10 @@ pipeline {
                     sleep 10
 
                     set +e
-                    docker run --rm --network container:devops_smoke curlimages/curl:8.9.0 -f http://localhost/ > /dev/null 2>&1
+                    docker run --rm \
+                        --network container:devops_smoke \
+                        curlimages/curl:8.9.0 \
+                        -f http://localhost/ > /dev/null 2>&1
                     STATUS=$?
                     set -e
 
@@ -54,6 +60,7 @@ pipeline {
             }
         }
 
+        /* ---------------------- PUSH IMAGE ---------------------- */
         stage('Push Image') {
             steps {
                 sh '''
@@ -62,15 +69,17 @@ pipeline {
             }
         }
 
+        /* ---------------------- DEPLOY TO EC2 ---------------------- */
         stage('Deploy to EC2') {
             steps {
                 sshagent (credentials: ['EC2_SSH_CREDENTIALS']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
 
+# Update system
 sudo yum update -y
 
-# Install Docker if needed
+# Install Docker if missing
 if ! command -v docker &> /dev/null
 then
     if command -v amazon-linux-extras &> /dev/null; then
@@ -82,15 +91,31 @@ then
     sudo systemctl enable docker
 fi
 
-# Deploy latest version of app
-sudo docker pull ${IMAGE_NAME}:latest
+echo "🧹 Cleaning containers using port 8081..."
+
+# Find and stop any container bound to port 8081
+PORT_CONTAINER=\$(sudo docker ps -q --filter "publish=8081")
+if [ ! -z "\$PORT_CONTAINER" ]; then
+    echo "Stopping container on port 8081: \$PORT_CONTAINER"
+    sudo docker stop \$PORT_CONTAINER || true
+    sudo docker rm \$PORT_CONTAINER || true
+fi
+
+# Also stop/remove your app normally
 sudo docker stop devops_app || true
 sudo docker rm devops_app || true
 
+# Pull new image
+sudo docker pull ${IMAGE_NAME}:latest
+
+# Run new container cleanly
 sudo docker run -d \
   --name devops_app \
   -p 8081:80 \
   ${IMAGE_NAME}:latest
+
+# Optional cleanup
+sudo docker system prune -f --volumes
 
 EOF
                     """
