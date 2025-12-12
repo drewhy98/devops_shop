@@ -1,0 +1,32 @@
+---
+- name: Deploy DevOps Shop app to both servers
+  hosts: webservers
+  become: yes
+
+  tasks:
+
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull latest Docker image
+      command: docker pull st20276784/devops_shop_web:latest
+
+    - name: Stop running container
+      command: docker stop devops_app
+      ignore_errors: yes
+
+    - name: Remove old container
+      command: docker rm devops_app
+      ignore_errors: yes
+
+    - name: Run new container
+      command: docker run -d --name devops_app -p 8081:80 st20276784/devops_shop_web:latest
+
