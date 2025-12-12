@@ -1,0 +1,107 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'st20276784/devops_shop_web'
+        DOCKERHUB = credentials('DockerHub')
+
+        # Webserver2 (Ansible control node)
+        EC2_HOST = '51.20.129.215'
+        EC2_USER = 'ec2-user'
+    }
+
+    stages {
+
+        stage('Docker Login') {
+            steps {
+                sh '''
+                    echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
+                '''
+            }
+        }
+
+        stage('Build image') {
+            steps {
+                sh '''
+                    docker build \
+                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                '''
+            }
+        }
+
+        stage('Smoke test') {
+            steps {
+                sh '''
+                    docker rm -f devops_shop-smoke || true
+
+                    docker run -d --name devops_shop-smoke ${IMAGE_NAME}:${BUILD_NUMBER}
+                    sleep 15
+
+                    set +e
+                    docker run --rm \
+                        --network container:devops_shop-smoke \
+                        curlimages/curl:8.9.0 \
+                        -f http://localhost/ > /dev/null 2>&1
+                    STATUS=$?
+                    set -e
+
+                    if [ "$STATUS" -ne 0 ]; then
+                        echo "Smoke test FAILED"
+                        docker logs devops_shop-smoke || true
+                        docker rm -f devops_shop-smoke || true
+                        exit 1
+                    fi
+
+                    echo "Smoke test PASSED"
+                    docker rm -f devops_shop-smoke || true
+                '''
+            }
+        }
+
+        stage('Push image') {
+            steps {
+                sh '''
+                    docker push ${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Deploy via Ansible') {
+            steps {
+
+                sshagent(credentials: ['EC2_SSH_CREDENTIALS']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+
+cd ansible-setup
+
+# Check playbook exists
+if [ ! -f deploy_app.yml ]; then
+    echo "ERROR: deploy_app.yml not found on EC2 host"
+    exit 1
+fi
+
+# Run deployment to BOTH servers
+ansible-playbook -i inventory.ini deploy_app.yml
+
+EOF
+                    '''
+                }
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                echo "Cleanup complete"
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline completed."
+        }
+    }
+}
