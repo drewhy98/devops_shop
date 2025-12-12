@@ -227,7 +227,7 @@ session_start();
             <form method="post" action="logout.php" style="display:inline;">
                 <button type="submit" class="logout-btn">Logout</button>
               <!--   <a href="wishlist.php">View Wishlist</a> |-->
-               <!--  <a href="basket.php">View Basket</a> |-->
+                 <a href="basket.php">View Basket</a> 
                <!--  <a href="view_orders.php">View Orders</a> |-->
             </form>
         <?php else: ?>
@@ -264,6 +264,7 @@ session_start();
 
 </body>
 </html>
+
 
 
 
