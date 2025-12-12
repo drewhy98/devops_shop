@@ -43,6 +43,8 @@ require_once "dbconnect.php";   // provides $mysqli
             <span>Welcome, <?= htmlspecialchars($_SESSION['user_name']); ?></span>
             <form method="post" action="logout.php" style="display:inline;">
                 <button class="logout-btn">Logout</button>
+                <a href="basket.php">View Basket</a> 
+                
             </form>
         <?php else: ?>
             <a href="login.php">Log In</a> |
