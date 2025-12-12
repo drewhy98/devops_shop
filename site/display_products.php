@@ -88,10 +88,6 @@ if (!$result) {
                 <button class="btn">Add to Cart</button>
             </form>
 
-            <form method="post" action="add_to_wishlist.php">
-                <input type="hidden" name="product_id" value="<?= $row['product_id']; ?>">
-                <button class="btn">Add to Wishlist</button>
-            </form>
         <?php endif; ?>
     </div>
 <?php
