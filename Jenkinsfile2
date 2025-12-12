@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = 'st20276784/devops_shop_web'
         DOCKERHUB = credentials('DockerHub')
 
-        EC2_HOST = '16.171.231.184'
+        EC2_HOST = '51.20.129.215'
         EC2_USER = 'ec2-user'
     }
 
