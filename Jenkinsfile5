@@ -5,8 +5,7 @@ pipeline {
         IMAGE_NAME = 'st20276784/devops_shop_web'
         DOCKERHUB = credentials('DockerHub')
 
-        # Webserver2 (Ansible control node)
-        EC2_HOST = '51.20.129.215'
+        EC2_HOST = '51.20.129.215'          // Ansible controller (webserver2)
         EC2_USER = 'ec2-user'
     }
 
@@ -77,13 +76,11 @@ pipeline {
 
 cd ansible-setup
 
-# Check playbook exists
 if [ ! -f deploy_app.yml ]; then
-    echo "ERROR: deploy_app.yml not found on EC2 host"
+    echo "ERROR: deploy_app.yml not found"
     exit 1
 fi
 
-# Run deployment to BOTH servers
 ansible-playbook -i inventory.ini deploy_app.yml
 
 EOF
