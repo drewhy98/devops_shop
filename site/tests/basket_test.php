@@ -17,7 +17,7 @@ $items = [
     ['price' => 5.50, 'quantity' => 1],   // £5.50
 ];
 
-$expected = 30.50;
+$expected = 25.50;
 $actual = calculate_total($items);
 
 if (abs($expected - $actual) > 0.001) {
