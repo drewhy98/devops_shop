@@ -68,7 +68,7 @@ pipeline {
                     docker run -d --name devops_shop-test ${IMAGE_NAME}:${BUILD_NUMBER}
 
                     set +e
-                    docker exec devops_shop-test php /var/www/html/tests/basket_test.php
+                    docker exec devops_shop-test php /var/www/html/tests/basket_test2.php
                     TEST_STATUS=$?
                     set -e
 
